@@ -7,10 +7,11 @@
         xmlns:OpenTok="clr-namespace:OpenTok;assembly=WPFVideoRenderer"
         mc:Ignorable="d"
         Title="MainWindow" Height="960" Width="640">
-    <Grid>
-        <OpenTok:VideoRenderer x:Name="PublisherVideo" HorizontalAlignment="Center" Height="480" VerticalAlignment="Top" Width="640">
-        </OpenTok:VideoRenderer>
-        <OpenTok:VideoRenderer x:Name="SubscriberVideo" HorizontalAlignment="Center" Height="480" VerticalAlignment="Bottom" Width="640">
-        </OpenTok:VideoRenderer>
-    </Grid>
+	<Grid>
+		<OpenTok:VideoRenderer x:Name="PublisherVideo" HorizontalAlignment="Center" VerticalAlignment="Top" Width="640">
+		</OpenTok:VideoRenderer>
+		<Button x:Name="Button" Height="100" VerticalAlignment="Center" HorizontalAlignment="Stretch" Click="ButtonBase_OnClick" >Click me</Button>
+		<OpenTok:VideoRenderer x:Name="SubscriberVideo" HorizontalAlignment="Center" VerticalAlignment="Bottom" Width="640">
+		</OpenTok:VideoRenderer>
+	</Grid>
 </Window>

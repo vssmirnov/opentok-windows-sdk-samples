@@ -1,42 +1,39 @@
-﻿using System;
+﻿using OpenTok;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
-using OpenTok;
 
 namespace BasicVideoChat
 {
     public partial class MainWindow : Window
     {
-        private const string API_KEY = "";
-        private const string SESSION_ID = "";
-        private const string TOKEN = "";
+        public const string API_KEY = "";
+        public const string SESSION_ID = "";
+        public const string TOKEN = "";
 
-        private Context context;
-        private Session Session;
-        private Publisher Publisher;
+        Session Session;
+        Publisher Publisher;
+
+        public static class Logger
+        {
+            public static string Log { get; set; }
+        }
 
         public MainWindow()
         {
             InitializeComponent();
-
-            context = new Context(new WPFDispatcher());
+            Closed += OnClosed;
 
             // Uncomment following line to get debug logging
-            // LogUtil.Instance.EnableLogging();
+            LogUtil.Instance.EnableLogging();
 
-            IList<AudioDevice.InputAudioDevice> availableMics = AudioDevice.EnumerateInputAudioDevices();
-            if (availableMics == null || availableMics.Count == 0)
-                throw new Exception("No audio capture devices detected");
-            AudioDevice.SetInputAudioDevice(availableMics[0]);
-
-            IList<VideoCapturer.VideoDevice> capturerDevices = VideoCapturer.EnumerateDevices();
-            if (capturerDevices == null || capturerDevices.Count == 0)
-                throw new Exception("No video capture devices detected");
-
+            var context = new Context(new WPFDispatcher());
             Publisher = new Publisher.Builder(context)
             {
-                Capturer = capturerDevices[0].CreateVideoCapturer(VideoCapturer.Resolution.High, VideoCapturer.FrameRate.Fps30),
                 Renderer = PublisherVideo
             }.Build();
 
@@ -48,11 +45,16 @@ namespace BasicVideoChat
             Session.Connect(TOKEN);
         }
 
+        private void OnClosed(object sender, EventArgs e)
+        {
+            File.WriteAllText(@".\Log.txt", Logger.Log);
+        }
+
         private void Session_Connected(object sender, System.EventArgs e)
         {
             Session.Publish(Publisher);
         }
- 
+
         private void Session_Disconnected(object sender, System.EventArgs e)
         {
             Trace.WriteLine("Session disconnected.");
@@ -65,11 +67,149 @@ namespace BasicVideoChat
 
         private void Session_StreamReceived(object sender, Session.StreamEventArgs e)
         {
-            Subscriber subscriber = new Subscriber.Builder(context, e.Stream)
+            Subscriber subscriber = new Subscriber.Builder(Context.Instance, e.Stream)
             {
                 Renderer = SubscriberVideo
             }.Build();
             Session.Subscribe(subscriber);
         }
+
+        public void ButtonBase_OnClick(object sender, RoutedEventArgs e)
+        {
+            var delayActionUser = 3000;
+            while (true)
+            {
+                Logger.Log += Environment.NewLine + "Publisher.PublishAudio = false" + Environment.NewLine;
+                Publisher.PublishAudio = false;
+                Task.Delay(delayActionUser);
+                File.WriteAllText(@".\Log.txt", Logger.Log);
+                Logger.Log = String.Empty;
+
+                Logger.Log += Environment.NewLine + "Publisher.PublishAudio = true" + Environment.NewLine;
+                Publisher.PublishAudio = true;
+                Task.Delay(delayActionUser);
+                File.WriteAllText(@".\Log.txt", Logger.Log);
+                Logger.Log = String.Empty;
+
+                Logger.Log += Environment.NewLine + "Publisher.PublishVideo = false" + Environment.NewLine;
+                Publisher.PublishVideo = false;
+                Task.Delay(delayActionUser);
+                File.WriteAllText(@".\Log.txt", Logger.Log);
+                Logger.Log = String.Empty;
+
+                Logger.Log += Environment.NewLine + "Publisher.PublishVideo = true" + Environment.NewLine;
+                Publisher.PublishVideo = true;
+                Task.Delay(delayActionUser);
+                File.WriteAllText(@".\Log.txt", Logger.Log);
+                Logger.Log = String.Empty;
+
+                Logger.Log += Environment.NewLine + "SelectFirstCamera();" + Environment.NewLine;
+                SelectFirstCamera();
+                Task.Delay(delayActionUser);
+                File.WriteAllText(@".\Log.txt", Logger.Log);
+                Logger.Log = String.Empty;
+
+                Logger.Log += Environment.NewLine + "SelectLastCamera();" + Environment.NewLine;
+                SelectLastCamera();
+                Task.Delay(delayActionUser);
+                File.WriteAllText(@".\Log.txt", Logger.Log);
+                Logger.Log = String.Empty;
+            }
+        }
+
+        public void SelectCamera(string id)
+        {
+            if (string.IsNullOrEmpty(id)) throw new Exception("id is null");
+            var isPublishAudio = Publisher.PublishAudio;
+            var isPublishVideo = Publisher.PublishVideo;
+            UnPublish();
+
+            var videoCapturer = GetVideoCapturer(id);
+            Publish(isPublishAudio, isPublishVideo, videoCapturer);
+        }
+
+        public void SelectFirstCamera()
+        {
+            try
+            {
+                var devices = VideoCapturer.EnumerateDevices();
+                var id = devices.FirstOrDefault()?.Id;
+                SelectCamera(id);
+            }
+            catch (Exception ex)
+            {
+            }
+        }
+
+        public void SelectLastCamera()
+        {
+            try
+            {
+                var devices = VideoCapturer.EnumerateDevices();
+                var id = devices.LastOrDefault()?.Id;
+                SelectCamera(id);
+            }
+            catch (Exception ex)
+            {
+            }
+        }
+
+        private void Publish(bool isPublishAudio, bool isPublishVideo, IVideoCapturer capture)
+        {
+            var builder = new Publisher.Builder(new Context(new WPFDispatcher()));
+
+            if (capture != null)
+            {
+                builder.Capturer = capture;
+            }
+
+            builder.Renderer = PublisherVideo;
+
+            Publisher = builder.Build();
+            Publisher.PublishAudio = isPublishAudio;
+            Publisher.PublishVideo = isPublishVideo;
+            Publisher.VideoSourceType = VideoSourceType.Camera;
+
+            Session.Publish(Publisher);
+        }
+
+        private void UnPublish()
+        {
+            Session.Unpublish(Publisher);
+            Publisher.Dispose();
+            Publisher = null;
+        }
+
+        private VideoCapturer GetVideoCapturer(string id)
+        {
+            try
+            {
+                VideoCapturer videoCapturer = null;
+
+                var cameraList = GetVideoDevices();
+                var device = cameraList?.FirstOrDefault(t => t?.Id?.Equals(id) ?? false);
+                var videoFormat = GetFormatVideoDevices(device)?.FirstOrDefault();
+
+                if (device != null && videoFormat != null)
+                    videoCapturer = device.CreateVideoCapturer(videoFormat);
+
+                return videoCapturer;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+        private IList<VideoCapturer.VideoDevice> GetVideoDevices()
+        {
+            return VideoCapturer.EnumerateDevices();
+        }
+
+        private IList<VideoCapturer.VideoFormat> GetFormatVideoDevices(VideoCapturer.VideoDevice device)
+        {
+            return device.ListFormats();
+        }
+
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace BasicVideoChat
@@ -15,7 +16,7 @@ namespace BasicVideoChat
         {
             otc_logger_func X = (string message) =>
             {
-                Console.WriteLine(message);
+                MainWindow.Logger.Log += message + Environment.NewLine;
             };
             otc_log_enable(0x7FFFFFFF);
             otc_log_set_logger_callback(X);
