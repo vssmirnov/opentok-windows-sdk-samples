@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
 using OpenTok;
 
 namespace BasicVideoChat
@@ -20,32 +21,12 @@ namespace BasicVideoChat
         {
             InitializeComponent();
 
-            context = new Context(new WPFDispatcher());
+            var index = 0;
 
-            // Uncomment following line to get debug logging
-            // LogUtil.Instance.EnableLogging();
-
-            IList<AudioDevice.InputAudioDevice> availableMics = AudioDevice.EnumerateInputAudioDevices();
-            if (availableMics == null || availableMics.Count == 0)
-                throw new Exception("No audio capture devices detected");
-            AudioDevice.SetInputAudioDevice(availableMics[0]);
-
-            IList<VideoCapturer.VideoDevice> capturerDevices = VideoCapturer.EnumerateDevices();
-            if (capturerDevices == null || capturerDevices.Count == 0)
-                throw new Exception("No video capture devices detected");
-
-            Publisher = new Publisher.Builder(context)
+            foreach (VideoCapturer.VideoDevice device in VideoCapturer.EnumerateDevices())
             {
-                Capturer = capturerDevices[0].CreateVideoCapturer(VideoCapturer.Resolution.High, VideoCapturer.FrameRate.Fps30),
-                Renderer = PublisherVideo
-            }.Build();
-
-            Session = new Session.Builder(context, API_KEY, SESSION_ID).Build();
-            Session.Connected += Session_Connected;
-            Session.Disconnected += Session_Disconnected;
-            Session.Error += Session_Error;
-            Session.StreamReceived += Session_StreamReceived;
-            Session.Connect(TOKEN);
+                ListBoxCamera.Items.Add(new ListBoxItem() { Content = device.Name, TabIndex = index++});
+            }
         }
 
         private void Session_Connected(object sender, System.EventArgs e)
@@ -65,11 +46,40 @@ namespace BasicVideoChat
 
         private void Session_StreamReceived(object sender, Session.StreamEventArgs e)
         {
-            Subscriber subscriber = new Subscriber.Builder(context, e.Stream)
+        }
+
+        private void CheckBoxCamera_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ListBoxCamera.SelectedItem == null) return;
+
+            var index = ((ListBoxItem)ListBoxCamera.SelectedItem).TabIndex;
+
+            context = new Context(new WPFDispatcher());
+
+            // Uncomment following line to get debug logging
+            // LogUtil.Instance.EnableLogging();
+
+            IList<AudioDevice.InputAudioDevice> availableMics = AudioDevice.EnumerateInputAudioDevices();
+            if (availableMics == null || availableMics.Count == 0)
+                throw new Exception("No audio capture devices detected");
+            AudioDevice.SetInputAudioDevice(availableMics[0]);
+
+            IList<VideoCapturer.VideoDevice> capturerDevices = VideoCapturer.EnumerateDevices();
+            if (capturerDevices == null || capturerDevices.Count == 0)
+                throw new Exception("No video capture devices detected");
+
+            Publisher = new Publisher.Builder(context)
             {
-                Renderer = SubscriberVideo
+                Capturer = capturerDevices[index].CreateVideoCapturer(VideoCapturer.Resolution.High, VideoCapturer.FrameRate.Fps30),
+                Renderer = PublisherVideo
             }.Build();
-            Session.Subscribe(subscriber);
+
+            Session = new Session.Builder(context, API_KEY, SESSION_ID).Build();
+            Session.Connected += Session_Connected;
+            Session.Disconnected += Session_Disconnected;
+            Session.Error += Session_Error;
+            Session.StreamReceived += Session_StreamReceived;
+            Session.Connect(TOKEN);
         }
     }
 }

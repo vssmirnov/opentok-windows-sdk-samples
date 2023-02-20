@@ -10,7 +10,7 @@
     <Grid>
         <OpenTok:VideoRenderer x:Name="PublisherVideo" HorizontalAlignment="Center" Height="480" VerticalAlignment="Top" Width="640">
         </OpenTok:VideoRenderer>
-        <OpenTok:VideoRenderer x:Name="SubscriberVideo" HorizontalAlignment="Center" Height="480" VerticalAlignment="Bottom" Width="640">
-        </OpenTok:VideoRenderer>
-    </Grid>
+		<ComboBox x:Name="ListBoxCamera" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" IsEnabled="true" Height="50" SelectionChanged="CheckBoxCamera_OnSelectionChanged">
+		</ComboBox> 
+	</Grid>
 </Window>
