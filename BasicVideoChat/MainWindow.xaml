@@ -8,10 +8,15 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="960" Width="640">
 	<Grid>
-		<OpenTok:VideoRenderer x:Name="PublisherVideo" HorizontalAlignment="Center" VerticalAlignment="Top" Width="640">
-		</OpenTok:VideoRenderer>
-		<Button x:Name="Button" Height="100" VerticalAlignment="Center" HorizontalAlignment="Stretch" Click="ButtonBase_OnClick" >Click me</Button>
-		<OpenTok:VideoRenderer x:Name="SubscriberVideo" HorizontalAlignment="Center" VerticalAlignment="Bottom" Width="640">
-		</OpenTok:VideoRenderer>
+		<StackPanel VerticalAlignment="Top">
+			<Button x:Name="Button1" Height="50" Click="ButtonBase_OnClick" >Scenario 1</Button>
+			<Button x:Name="Button2" Height="50" Click="ButtonBase2_OnClick" >Scenario 2</Button>
+		</StackPanel>
+		<StackPanel VerticalAlignment="Bottom">
+			<OpenTok:VideoRenderer x:Name="PublisherVideo" Width="320" Height="240">
+			</OpenTok:VideoRenderer>
+			<OpenTok:VideoRenderer x:Name="ShareVideo" Width="320" Height="240">
+			</OpenTok:VideoRenderer>
+		</StackPanel>
 	</Grid>
 </Window>

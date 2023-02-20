@@ -15,8 +15,12 @@ namespace BasicVideoChat
         public const string SESSION_ID = "";
         public const string TOKEN = "";
 
-        Session Session;
-        Publisher Publisher;
+        private Session Session;
+        private Publisher Publisher;
+        private bool _isSharedScreen;
+        private Publisher _publisherShare;
+        private bool isButton2Click = false;
+        private bool isButtonClick = false;
 
         public static class Logger
         {
@@ -29,7 +33,7 @@ namespace BasicVideoChat
             Closed += OnClosed;
 
             // Uncomment following line to get debug logging
-            LogUtil.Instance.EnableLogging();
+            // LogUtil.Instance.EnableLogging();
 
             var context = new Context(new WPFDispatcher());
             Publisher = new Publisher.Builder(context)
@@ -41,7 +45,6 @@ namespace BasicVideoChat
             Session.Connected += Session_Connected;
             Session.Disconnected += Session_Disconnected;
             Session.Error += Session_Error;
-            Session.StreamReceived += Session_StreamReceived;
             Session.Connect(TOKEN);
         }
 
@@ -65,55 +68,116 @@ namespace BasicVideoChat
             Trace.WriteLine("Session error:" + e.ErrorCode);
         }
 
-        private void Session_StreamReceived(object sender, Session.StreamEventArgs e)
-        {
-            Subscriber subscriber = new Subscriber.Builder(Context.Instance, e.Stream)
-            {
-                Renderer = SubscriberVideo
-            }.Build();
-            Session.Subscribe(subscriber);
-        }
-
         public void ButtonBase_OnClick(object sender, RoutedEventArgs e)
         {
             var delayActionUser = 3000;
-            while (true)
+            isButtonClick = !isButtonClick;
+            while (isButtonClick)
             {
                 Logger.Log += Environment.NewLine + "Publisher.PublishAudio = false" + Environment.NewLine;
                 Publisher.PublishAudio = false;
-                Task.Delay(delayActionUser);
                 File.WriteAllText(@".\Log.txt", Logger.Log);
                 Logger.Log = String.Empty;
+                Task.Delay(delayActionUser);
 
                 Logger.Log += Environment.NewLine + "Publisher.PublishAudio = true" + Environment.NewLine;
                 Publisher.PublishAudio = true;
-                Task.Delay(delayActionUser);
                 File.WriteAllText(@".\Log.txt", Logger.Log);
                 Logger.Log = String.Empty;
+                Task.Delay(delayActionUser);
 
                 Logger.Log += Environment.NewLine + "Publisher.PublishVideo = false" + Environment.NewLine;
                 Publisher.PublishVideo = false;
-                Task.Delay(delayActionUser);
                 File.WriteAllText(@".\Log.txt", Logger.Log);
                 Logger.Log = String.Empty;
+                Task.Delay(delayActionUser);
 
                 Logger.Log += Environment.NewLine + "Publisher.PublishVideo = true" + Environment.NewLine;
                 Publisher.PublishVideo = true;
-                Task.Delay(delayActionUser);
                 File.WriteAllText(@".\Log.txt", Logger.Log);
                 Logger.Log = String.Empty;
+                Task.Delay(delayActionUser);
 
                 Logger.Log += Environment.NewLine + "SelectFirstCamera();" + Environment.NewLine;
                 SelectFirstCamera();
-                Task.Delay(delayActionUser);
                 File.WriteAllText(@".\Log.txt", Logger.Log);
                 Logger.Log = String.Empty;
+                Task.Delay(delayActionUser);
 
                 Logger.Log += Environment.NewLine + "SelectLastCamera();" + Environment.NewLine;
                 SelectLastCamera();
-                Task.Delay(delayActionUser);
                 File.WriteAllText(@".\Log.txt", Logger.Log);
                 Logger.Log = String.Empty;
+                Task.Delay(delayActionUser);
+            }
+        }
+
+        public void ButtonBase2_OnClick(object sender, RoutedEventArgs e)
+        {
+            var delayActionUser = 3000;
+            isButton2Click = !isButton2Click;
+            while (isButton2Click)
+            {
+                Logger.Log += Environment.NewLine + "StartShare" + Environment.NewLine;
+                StartShare();
+                File.WriteAllText(@".\Log.txt", Logger.Log);
+                Logger.Log = String.Empty;
+                Task.Delay(delayActionUser);
+                
+                Logger.Log += Environment.NewLine + "StopSharing" + Environment.NewLine;
+                StopSharing();
+                File.WriteAllText(@".\Log.txt", Logger.Log);
+                Logger.Log = String.Empty;
+                Task.Delay(delayActionUser);
+
+                Logger.Log += Environment.NewLine + "SelectFirstCamera();" + Environment.NewLine;
+                SelectFirstCamera();
+                File.WriteAllText(@".\Log.txt", Logger.Log);
+                Logger.Log = String.Empty;
+                Task.Delay(delayActionUser);
+
+                Logger.Log += Environment.NewLine + "SelectLastCamera();" + Environment.NewLine;
+                SelectLastCamera();
+                File.WriteAllText(@".\Log.txt", Logger.Log);
+                Logger.Log = String.Empty;
+                Task.Delay(delayActionUser);
+            }
+        }
+
+        private void StartShare()
+        {
+            if (_isSharedScreen) return;
+
+            _isSharedScreen = true;
+
+            try
+            {
+                var builder = new Publisher.Builder(new Context(new WPFDispatcher()));
+                builder.Capturer = new MeetingScreenSharingCapturer();
+                builder.Renderer = ShareVideo;
+                _publisherShare = builder.Build();
+                _publisherShare.PublishAudio = false;
+                _publisherShare.PublishVideo = true;
+                _publisherShare.VideoSourceType = VideoSourceType.Screen;
+                Session.Publish(_publisherShare);
+            }
+            catch (Exception ex)
+            {
+            }
+        }
+
+        private void StopSharing()
+        {
+            if (!_isSharedScreen) return;
+
+            try
+            {
+                Session.Unpublish(_publisherShare);
+                _publisherShare.Dispose();
+            }
+            catch (Exception ex)
+            {
+
             }
         }
 
@@ -176,7 +240,7 @@ namespace BasicVideoChat
         private void UnPublish()
         {
             Session.Unpublish(Publisher);
-            Publisher.Dispose();
+            Publisher?.Dispose();
             Publisher = null;
         }
 
