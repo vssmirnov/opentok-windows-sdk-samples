@@ -3,13 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:BasicVideoChat"
-        xmlns:OpenTok="clr-namespace:OpenTok;assembly=WPFVideoRenderer"
+        xmlns:openTok="clr-namespace:OpenTok;assembly=WPFVideoRenderer"
         mc:Ignorable="d"
         Title="MainWindow" Height="960" Width="640">
     <Grid>
-        <OpenTok:VideoRenderer x:Name="PublisherVideo" HorizontalAlignment="Center" Height="480" VerticalAlignment="Top" Width="640">
-        </OpenTok:VideoRenderer>
+        <openTok:VideoRenderer x:Name="PublisherVideo" HorizontalAlignment="Center" Height="480" VerticalAlignment="Top" Width="640">
+        </openTok:VideoRenderer>
 		<ComboBox x:Name="ListBoxCamera" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" IsEnabled="true" Height="50" SelectionChanged="CheckBoxCamera_OnSelectionChanged">
 		</ComboBox> 
 	</Grid>
